@@ -1,0 +1,37 @@
+name: Build and Deploy
+on:
+  push:
+    branches:
+      - main
+
+  schedule:
+    - cron:  '0 0 * * *' 
+permissions:
+  contents: write
+jobs:
+  build-and-deploy:
+    concurrency: ci-${{ github.ref }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8.5.1
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+      - name: Install and Build 🔧
+        run: |
+          pnpm install
+          pnpm lint
+          pnpm build
+
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: build
+          clean: true
+          clean-exclude: |
+            CNAME
