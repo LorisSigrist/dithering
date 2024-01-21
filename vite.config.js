@@ -6,5 +6,8 @@ export default defineConfig({
 	plugins: [sveltekit(), glsl({ compress: true })],
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}']
+	},
+	build: {
+		assetsInlineLimit: 0
 	}
 });
