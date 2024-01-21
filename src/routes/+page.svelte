@@ -1,8 +1,8 @@
 <script>
 	import '$lib/styles/bootstrap.css';
 	import { loadImageFile } from './utils.js';
-	import og_image from '$lib/assets/og.webp';
-	import logo from '$lib/assets/dither-studio-logo.png';
+	import og_image from '$lib/assets/og.webp?url';
+	import logo from '$lib/assets/dither-studio-logo.png?url';
 	import ImageSelectionScreen from './ImageSelectionScreen.svelte';
 	import DitherStudio from './DitherStudio.svelte';
 	import { getImageData } from '$lib/utils/loadImage';
