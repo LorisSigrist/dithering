@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+	@apply min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-slate-100;
+	@apply print:bg-transparent print:text-black;
+}
+
+/* Add some margin to the page while printing */
+@media print {
+	@page {
+		margin: 1.75cm;
+	}
+
+	:root {
+		font-size: 10pt;
+	}
+}
