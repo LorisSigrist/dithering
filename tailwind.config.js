@@ -7,5 +7,5 @@ export default {
 		extend: {}
 	},
 	plugins: [Forms],
-	darkMode: "class"
+	darkMode: 'class'
 };
