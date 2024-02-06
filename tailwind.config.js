@@ -6,5 +6,6 @@ export default {
 	theme: {
 		extend: {}
 	},
-	plugins: [Forms]
+	plugins: [Forms],
+	darkMode: "class"
 };
