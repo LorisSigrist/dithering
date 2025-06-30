@@ -2,3 +2,6 @@ onlyBuiltDependencies:
   - esbuild
   - svelte-preprocess
   - wasm-pack
+
+packages:
+  - .

@@ -1,4 +1,3 @@
-cargo-features = ["profile-rustflags", "trim-paths"]
 
 [package]
 name = "png_encode"
@@ -20,5 +19,3 @@ lto = "fat"
 opt-level = "z"
 panic = "abort"
 strip = true
-trim-paths = "all"
-rustflags = ["-Cdebuginfo=0", "-Zthreads=8"]
