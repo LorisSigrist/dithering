@@ -38,8 +38,29 @@
 			dispatch('image', new_image);
 		};
 		new_image.src = url;
+		URL.revokeObjectURL(url)
+	}
+
+	/**
+	 * @param {ClipboardEvent} e
+	 */
+	function onPaste(e) {
+    const items = e.clipboardData?.items ?? [];
+
+    for ( const item of items ) {
+      if ( !item.type.startsWith("image")) continue
+
+      console.log(item)
+
+      const file = item.getAsFile();
+      const url = URL.createObjectURL(file)
+
+      loadFromSrc(url)
+    }
 	}
 </script>
+
+<svelte:document on:paste={onPaste}></svelte:document>
 
 <img
 	src={logo_src}
