@@ -1,52 +1,94 @@
+#![no_std]
+
+extern crate alloc;
+
+use alloc::vec::Vec;
 use png::{BitDepth, ColorType, Encoder};
-use std::{collections::HashMap, io::Cursor};
 use wasm_bindgen::prelude::*;
 
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-pub fn export_png(width: u32, height: u32, pixels: &[u8]) -> Result<Vec<u8>, String> {
+pub fn export_png(width: u32, height: u32, pixels: &[u8]) -> Result<Vec<u8>, u8> {
     let mut buffer = Vec::new();
 
     {
-        let cursor = Cursor::new(&mut buffer);
-        let (indexed_pixels, palette) = rgba_to_indexed(pixels)?;
+        let (indexed_pixels, palette, trns) = rgba_to_indexed(pixels)?;
 
-        let mut encoder = Encoder::new(cursor, width, height);
+        let mut encoder = Encoder::new(&mut buffer, width, height);
+
         encoder.set_color(ColorType::Indexed);
         encoder.set_depth(BitDepth::Eight);
-        encoder.set_palette(palette.clone());
 
-        let mut writer = encoder.write_header().unwrap();
+        encoder.set_palette(palette);
+        encoder.set_trns(trns);
 
-        writer.write_image_data(&indexed_pixels).unwrap();
+        let mut writer = encoder.write_header().map_err(|_| 1)?;
+
+        writer.write_image_data(&indexed_pixels).map_err(|_| 2)?;
     }
 
     Ok(buffer)
 }
 
-fn rgba_to_indexed(rgba: &[u8]) -> Result<(Vec<u8>, Vec<u8>), String> {
+const ALPHA_THRESHOLD: u8 = 154;
+
+fn rgba_to_indexed(rgba: &[u8]) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), u8> {
     let mut palette: Vec<[u8; 3]> = Vec::new();
-    let mut color_map: HashMap<[u8; 3], u8> = HashMap::new();
+    let mut alphas: Vec<u8> = Vec::new();
+
     let mut indexed_pixels = Vec::with_capacity(rgba.len() / 4);
 
-    for chunk in rgba.chunks(4) {
+    for chunk in rgba.chunks_exact(4) {
         let rgb = [chunk[0], chunk[1], chunk[2]];
+        let a = chunk[3];
 
-        if let Some(&idx) = color_map.get(&rgb) {
-            indexed_pixels.push(idx);
-        } else {
-            if palette.len() >= 256 {
-                return Err("Palette too big, max 256 colors".to_string());
-            }
-            let idx = palette.len() as u8;
-            palette.push(rgb);
-            color_map.insert(rgb, idx);
-            indexed_pixels.push(idx);
+        if a < ALPHA_THRESHOLD {
+            indexed_pixels.push(0);
+            continue;
         }
+
+        let mut found: Option<u8> = None;
+
+        for (i, p) in palette.iter().enumerate() {
+            let idx = i as u8 + 1;
+            if *p == rgb {
+                found = Some(idx);
+                break;
+            }
+        }
+
+        let idx = match found {
+            Some(i) => i,
+
+            None => {
+                if palette.len() >= 255 {
+                    return Err(3);
+                }
+
+                let i = palette.len() as u8 + 1;
+
+                palette.push(rgb);
+                alphas.push(255);
+
+                i
+            }
+        };
+
+        indexed_pixels.push(idx);
     }
 
-    let flat_palette: Vec<u8> = palette.iter().flat_map(|rgb| rgb.iter().copied()).collect();
-    Ok((indexed_pixels, flat_palette))
+    let mut flat_palette = Vec::with_capacity((palette.len() + 1) * 3);
+    let mut trns = Vec::with_capacity(palette.len() + 1);
+
+    flat_palette.extend_from_slice(&[0, 0, 0]);
+    trns.push(0);
+
+    for rgb in palette.iter() {
+        flat_palette.extend_from_slice(rgb);
+        trns.push(255);
+    }
+
+    Ok((indexed_pixels, flat_palette, trns))
 }
